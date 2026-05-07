@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding Kanban</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0ede8;--bg2:#e8e4dd;--white:#fff;--border:#d8d3ca;--border2:#c8c2b8;
+  --text:#1a1815;--text2:#5a554e;--text3:#9a948a;
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+  --rh:#6b48f7;--rh-bg:#f0edff;--rh-border:#d4caff;
+  --adm:#0a9b7d;--adm-bg:#e6f7f3;--adm-border:#b3e8dc;
+  --ti:#1e6fd9;--ti-bg:#e8f1fc;--ti-border:#b8d4f5;
+  --on:#c47a00;--on-bg:#fff8e6;--on-border:#f5e0a0;
+  --comp:#c0334a;--comp-bg:#fdeef1;--comp-border:#f5b8c4;
+  --done:#2d7a3a;--done-bg:#eaf5ec;--done-border:#b4deba;
+  --warn:#b45309;--warn-bg:#fef3c7;--warn-border:#fcd34d;
+  --sans:'Plus Jakarta Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;}
+header{background:var(--white);border-bottom:1.5px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;border-radius:9px;background:var(--rh);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.logo-text{font-size:15px;font-weight:800;letter-spacing:-.02em;}
+.logo-sub{font-size:12px;color:var(--text3);font-weight:500;margin-left:2px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.stats-pill{display:flex;align-items:center;gap:6px;background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;color:var(--text2);}
+.stats-pill span{font-weight:800;color:var(--text);}
+.btn-new{background:var(--rh);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn-new:hover{background:#5a38e0;transform:translateY(-1px);}
+.mvp-banner{background:#1a1815;color:#c8c3bb;padding:9px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;font-weight:500;line-height:1.5;position:sticky;top:60px;z-index:99;}
+.mvp-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.mvp-badge{background:#f59e0b;color:#1a1815;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:5px;white-space:nowrap;flex-shrink:0;}
+.mvp-text{color:#c8c3bb;}
+.mvp-text strong{color:#fff;}
+.mvp-dismiss{background:none;border:1px solid #3a3830;color:#9a938a;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap;flex-shrink:0;}
+.mvp-dismiss:hover{border-color:#6a6358;color:#e8e4dc;}
+.legend-bar{background:var(--white);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:6px;overflow-x:auto;}
+.legend-item{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;border:1.5px solid transparent;}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+.flow-arrow{font-size:18px;color:var(--border2);}
+.board-wrap{flex:1;padding:24px 28px 40px;overflow-x:auto;}
+.board{display:grid;grid-template-columns:repeat(6,minmax(248px,1fr));gap:16px;min-width:1490px;}
+.col{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;}
+.col-head{padding:14px 16px 12px;border-bottom:1.5px solid var(--border);background:var(--white);}
+.col-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.col-label{display:flex;align-items:center;gap:8px;}
+.col-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.col-name{font-size:13px;font-weight:800;letter-spacing:-.01em;}
+.col-count{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.col-desc{font-size:11px;color:var(--text3);line-height:1.5;font-weight:500;}
+.col-required{font-size:10px;color:var(--text3);margin-top:5px;font-weight:600;line-height:1.4;}
+.col-required strong{color:var(--text2);}
+.col-body{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1;min-height:120px;transition:background .15s;}
+.col-body.drag-over-ok{background:rgba(45,122,58,.07);outline:2px dashed var(--done);}
+.col-body.drag-over-block{background:rgba(192,51,74,.07);outline:2px dashed var(--comp);}
+.card{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:grab;transition:transform .15s,box-shadow .15s,border-color .15s;position:relative;animation:fadeUp .25s ease both;}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--border2);}
+.card.dragging{opacity:.4;transform:rotate(2deg)scale(.97);cursor:grabbing;}
+.card.blocked{border-color:var(--warn-border)!important;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.shake{animation:shake .35s ease;}
+@keyframes autoMove{0%{transform:translateY(0);box-shadow:none}30%{transform:translateY(-6px);box-shadow:0 12px 32px rgba(45,122,58,.25);border-color:var(--done)!important}70%{transform:translateY(-6px);box-shadow:0 12px 32px rgba(45,122,58,.25);border-color:var(--done)!important}100%{transform:translateY(0);opacity:0}}
+.auto-moving{animation:autoMove .7s ease forwards;pointer-events:none;}
+.card.ready{border-color:var(--done)!important;background:linear-gradient(to bottom,#f6fff7,var(--white))!important;}
+.card.ready .card-accent{background:var(--done)!important;}
+.ready-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--done-bg);border:1px solid var(--done-border);border-radius:20px;font-size:10.5px;font-weight:700;color:var(--done);margin:0 0 8px 10px;}
+.card-accent{position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.card-id{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.04em;}
+.card-menu{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:0 2px;line-height:1;border-radius:4px;transition:all .15s;}
+.card-menu:hover{background:var(--bg);color:var(--text);}
+.card-name{font-size:14px;font-weight:700;letter-spacing:-.01em;margin-bottom:2px;padding-left:10px;}
+.card-role{font-size:11.5px;color:var(--text2);font-weight:500;padding-left:10px;margin-bottom:8px;}
+.card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding-left:10px;}
+.tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;letter-spacing:.02em;text-transform:uppercase;border:1px solid transparent;}
+.card-pending{margin:0 0 8px 0;padding:7px 10px 7px 14px;background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;font-size:11px;font-weight:600;color:var(--warn);line-height:1.5;}
+.card-pending-title{font-weight:800;margin-bottom:2px;}
+.card-meta{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0;border-top:1px solid var(--border);margin-top:2px;}
+.card-date{font-size:11px;color:var(--text3);font-weight:500;}
+.prog-bar{width:48px;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:2px;transition:width .4s;}
+.prog-pct{font-size:10px;font-weight:700;color:var(--text3);}
+.card-progress{display:flex;align-items:center;gap:6px;}
+.card-actions{display:flex;gap:6px;margin-top:10px;padding-left:10px;}
+.btn-advance{flex:1;padding:7px 10px;border-radius:8px;font-family:var(--sans);font-size:11.5px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .15s;}
+.btn-fill{flex:1;padding:7px 10px;border-radius:8px;font-family:var(--sans);font-size:11.5px;font-weight:700;cursor:pointer;border:1.5px solid var(--warn-border);background:var(--warn-bg);color:var(--warn);transition:all .15s;}
+.btn-fill:hover{filter:brightness(.95);}
+.btn-view{padding:7px 10px;border-radius:8px;font-family:var(--sans);font-size:11.5px;font-weight:600;cursor:pointer;background:var(--bg);border:1.5px solid var(--border);color:var(--text2);transition:all .15s;}
+.btn-view:hover{border-color:var(--border2);}
+.col-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:24px 16px;color:var(--text3);font-size:12px;font-weight:500;text-align:center;}
+.col-empty-icon{font-size:28px;opacity:.5;}
+.card.done{opacity:.7;}
+.card.done .card-name{text-decoration:line-through;color:var(--text3);}
+.backdrop{position:fixed;inset:0;background:rgba(26,24,21,.5);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(2px);}
+.backdrop.open{opacity:1;pointer-events:all;}
+.modal{background:var(--white);border:1.5px solid var(--border);border-radius:20px;padding:28px;width:480px;max-width:94vw;transform:translateY(16px)scale(.97);transition:transform .25s cubic-bezier(.34,1.56,.64,1);max-height:90vh;overflow-y:auto;}
+.backdrop.open .modal{transform:none;}
+.modal-title{font-size:20px;font-weight:800;margin-bottom:3px;letter-spacing:-.02em;}
+.modal-sub{font-size:12.5px;color:var(--text3);margin-bottom:20px;font-weight:500;}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;}
+.field label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);}
+.req-star{color:var(--comp);}
+.field input,.field select,.field textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;transition:border-color .15s;width:100%;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--rh);background:var(--white);}
+.field input.error,.field select.error,.field textarea.error{border-color:var(--comp);background:#fff8f8;}
+.field textarea{resize:vertical;min-height:68px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
+.btn-cancel{padding:9px 18px;border-radius:9px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--text2);transition:all .15s;}
+.btn-cancel:hover{border-color:var(--border2);}
+.btn-create{padding:9px 22px;border-radius:9px;background:var(--rh);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;border:none;color:#fff;}
+.btn-save{padding:9px 22px;border-radius:9px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;border:none;color:#fff;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.detail-item{background:var(--bg);border-radius:8px;padding:10px 12px;}
+.detail-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:3px;}
+.detail-value{font-size:13px;font-weight:600;}
+.detail-value.empty{color:var(--text3);font-style:italic;font-weight:400;}
+.section-title{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin:16px 0 8px;display:flex;align-items:center;gap:6px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.timeline{display:flex;flex-direction:column;}
+.tl-item{display:flex;gap:12px;}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:20px;flex-shrink:0;}
+.tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.tl-line{width:1.5px;flex:1;background:var(--border);margin:4px 0;}
+.tl-content{padding-bottom:14px;flex:1;}
+.tl-stage{font-size:12px;font-weight:700;}
+.tl-desc{font-size:11px;color:var(--text3);margin-top:1px;}
+.drag-ghost{position:fixed;pointer-events:none;z-index:999;background:var(--white);border:2px solid var(--rh);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;box-shadow:var(--shadow-lg);opacity:.9;transform:rotate(3deg);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;}
+.drag-ghost.blocked-ghost{border-color:var(--comp);color:var(--comp);}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:var(--white);padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.18);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.success{background:var(--done);}
+#toast.error{background:var(--comp);}
+#toast.info{background:var(--ti);}
+#toast.warn{background:var(--warn);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏢</div>
+    <div><div class="logo-text">Onboarding Board</div></div>
+    <div class="logo-sub">RH · ADM · TI</div>
+  </div>
+  <div class="header-right">
+    <div class="stats-pill">Total: <span id="stat-total">0</span> · Bloqueadas: <span id="stat-block">0</span> · Concluídas: <span id="stat-done">0</span></div>
+    <button class="btn-new" onclick="openNew()">+ Nova task</button>
+  </div>
+</header>
+
+<!-- BANNER MVP -->
+<div class="mvp-banner" id="mvp-banner">
+  <div class="mvp-left">
+    <span class="mvp-badge">MVP</span>
+    <span class="mvp-text"><strong>Esta e uma versao inicial de demonstracao.</strong> O sistema esta em desenvolvimento e pode sofrer alteracoes de funcionalidades, fluxos, campos e regras de negocio.</span>
+  </div>
+  <button class="mvp-dismiss" onclick="document.getElementById('mvp-banner').style.display='none'">Entendi ✕</button>
+</div>
+
+<div class="legend-bar">
+  <span style="font-size:11.5px;font-weight:700;color:var(--text2);margin-right:4px">Fluxo:</span>
+  <div class="legend-item" style="background:var(--rh-bg);border-color:var(--rh-border);color:var(--rh)"><div class="legend-dot" style="background:var(--rh)"></div>1. RH</div>
+  <span class="flow-arrow">&#8594;</span>
+  <div class="legend-item" style="background:var(--adm-bg);border-color:var(--adm-border);color:var(--adm)"><div class="legend-dot" style="background:var(--adm)"></div>2. ADM</div>
+  <span class="flow-arrow">&#8594;</span>
+  <div class="legend-item" style="background:var(--ti-bg);border-color:var(--ti-border);color:var(--ti)"><div class="legend-dot" style="background:var(--ti)"></div>3. TI</div>
+  <span class="flow-arrow">&#8594;</span>
+  <div class="legend-item" style="background:var(--on-bg);border-color:var(--on-border);color:var(--on)"><div class="legend-dot" style="background:var(--on)"></div>4. Onboarding</div>
+  <span class="flow-arrow">&#8594;</span>
+  <div class="legend-item" style="background:var(--comp-bg);border-color:var(--comp-border);color:var(--comp)"><div class="legend-dot" style="background:var(--comp)"></div>5. Compliance</div>
+  <span class="flow-arrow">&#8594;</span>
+  <div class="legend-item" style="background:var(--done-bg);border-color:var(--done-border);color:var(--done)"><div class="legend-dot" style="background:var(--done)"></div>Concluido</div>
+  <div style="margin-left:10px;border-left:1px solid var(--border);padding-left:12px;font-size:11.5px;color:var(--text3);font-weight:500">
+    Cartoes amarelos = campos obrigatorios pendentes &bull; Clique "Preencher" para desbloquear
+  </div>
+</div>
+
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<!-- MODAL NOVA TASK -->
+<div class="backdrop" id="modal-new">
+  <div class="modal">
+    <div class="modal-title">Nova task de onboarding</div>
+    <div class="modal-sub">Campos com <span class="req-star">*</span> sao obrigatorios para o RH avancar.</div>
+    <div class="field-row">
+      <div class="field"><label>Nome completo <span class="req-star">*</span></label><input id="n-nome" type="text" placeholder="Ex: Ana Souza"></div>
+      <div class="field"><label>CPF <span class="req-star">*</span></label><input id="n-cpf" type="text" placeholder="000.000.000-00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Funcao <span class="req-star">*</span></label><input id="n-funcao" type="text" placeholder="Ex: Analista de RH"></div>
+      <div class="field"><label>Setor <span class="req-star">*</span></label>
+        <select id="n-setor"><option value="">Selecione</option><option>Tecnologia</option><option>Financeiro</option><option>Comercial</option><option>RH</option><option>Operacoes</option><option>Marketing</option><option>Juridico</option></select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Modelo de trabalho <span class="req-star">*</span></label>
+        <select id="n-modelo"><option value="">Selecione</option><option>Presencial</option><option>Hibrido</option><option>Remoto</option></select>
+      </div>
+      <div class="field"><label>Data de inicio <span class="req-star">*</span></label><input id="n-data" type="date"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>E-mail pessoal <span class="req-star">*</span></label><input id="n-email" type="email" placeholder="email@exemplo.com"></div>
+      <div class="field"><label>Contato pessoal <span class="req-star">*</span></label><input id="n-contato" type="text" placeholder="(11) 9 0000-0000"></div>
+    </div>
+    <div class="field"><label>Endereco com CEP <span class="req-star">*</span></label><input id="n-endereco" type="text" placeholder="Rua Exemplo, 100 - 01310-100"></div>
+    <div class="field"><label>Unidade de trabalho <span class="req-star">*</span></label>
+      <select id="n-unidade"><option value="">Selecione</option><option>Matriz SP</option><option>Filial RJ</option><option>Filial BH</option><option>Home Office</option></select>
+    </div>
+    <div class="field"><label>Observacoes</label><textarea id="n-obs" placeholder="Informacoes adicionais..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-new')">Cancelar</button>
+      <button class="btn-create" onclick="createTask()">Criar task</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PREENCHER -->
+<div class="backdrop" id="modal-fill">
+  <div class="modal" id="modal-fill-body"></div>
+</div>
+
+<!-- MODAL DETALHES -->
+<div class="backdrop" id="modal-detail">
+  <div class="modal" id="modal-detail-body"></div>
+</div>
+
+<div id="toast"></div>
+<div class="drag-ghost" id="ghost" style="display:none"></div>
+
+<script>
+// ── VALIDATION RULES PER STAGE ─────────────────────────────────────────────
+const STAGE_RULES = {
+  rh: {
+    label:'RH - Recursos Humanos', saveBtnColor:'#6b48f7',
+    fields:[
+      {key:'nome',     label:'Nome completo',      path:'nome'},
+      {key:'cpf',      label:'CPF',                path:'cpf'},
+      {key:'funcao',   label:'Funcao',             path:'funcao'},
+      {key:'setor',    label:'Setor',              path:'setor'},
+      {key:'modelo',   label:'Modelo de trabalho', path:'modelo'},
+      {key:'data',     label:'Data de inicio',     path:'data'},
+      {key:'email',    label:'E-mail pessoal',     path:'email'},
+      {key:'contato',  label:'Contato pessoal',    path:'contato'},
+      {key:'endereco', label:'Endereco com CEP',   path:'endereco'},
+      {key:'unidade',  label:'Unidade de trabalho',path:'unidade'},
+    ]
+  },
+  adm: {
+    label:'ADM - Administrativo', saveBtnColor:'#0a9b7d',
+    fields:[
+      {key:'adm_equipamentos',label:'No dos equipamentos', path:'adm.equipamentos'},
+      {key:'adm_telefone',    label:'Telefone corporativo', path:'adm.telefone'},
+    ]
+  },
+  ti: {
+    label:'TI - Infraestrutura', saveBtnColor:'#1e6fd9',
+    fields:[
+      {key:'ti_emailCorp',    label:'E-mail corporativo criado', path:'ti.emailCorp'},
+      {key:'ti_acessos',      label:'Acessos criados',           path:'ti.acessos'},
+      {key:'ti_equipamentos', label:'Equipamentos vinculados',   path:'ti.equipamentos'},
+    ]
+  },
+  onboarding: {
+    label:'Onboarding', saveBtnColor:'#c47a00',
+    fields:[
+      {key:'on_confirmacao',label:'Confirmar ambiente pronto e recepcao do colaborador',path:'on.confirmacao'},
+    ]
+  },
+  compliance: {
+    label:'Compliance - Validacao Final', saveBtnColor:'#c0334a',
+    fields:[
+      {key:'comp_dados',    label:'Dados enviados ao colaborador',        path:'comp.dados'},
+      {key:'comp_registros',label:'Registros de equipamentos realizados', path:'comp.registros'},
+      {key:'comp_entrega',  label:'Equipamentos entregues',              path:'comp.entrega'},
+      {key:'comp_termo',    label:'Termo de responsabilidade assinado',   path:'comp.termo'},
+      {key:'comp_facial',   label:'Cadastro facial realizado',            path:'comp.facial'},
+      {key:'comp_numCorp',  label:'Numero corporativo liberado',          path:'comp.numCorp'},
+    ]
+  }
+};
+
+function getPath(t,path){return path.split('.').reduce((o,k)=>o?.[k],t);}
+function setPath(t,path,val){const p=path.split('.');let o=t;for(let i=0;i<p.length-1;i++){if(!o[p[i]])o[p[i]]={};o=o[p[i]];}o[p[p.length-1]]=val;}
+function getMissing(t){const r=STAGE_RULES[t.stage];if(!r)return[];return r.fields.filter(f=>{const v=getPath(t,f.path);return!v||(typeof v==='string'&&!v.trim());});}
+function canAdvance(t){return getMissing(t).length===0;}
+
+const COLS=[
+  {id:'rh',        label:'1 · RH',        icon:'👥',desc:'Cadastro da vaga e dados do colaborador',   color:'var(--rh)',  bg:'var(--rh-bg)',  border:'var(--rh-border)'},
+  {id:'adm',       label:'2 · ADM',       icon:'🗄️',desc:'Provisao de equipamentos e recursos',       color:'var(--adm)', bg:'var(--adm-bg)',border:'var(--adm-border)'},
+  {id:'ti',        label:'3 · TI',        icon:'💻',desc:'Configuracao de acessos e sistemas',        color:'var(--ti)',  bg:'var(--ti-bg)', border:'var(--ti-border)'},
+  {id:'onboarding',label:'4 · Onboarding',icon:'🎉',desc:'Ambiente pronto - recepcao do colaborador', color:'var(--on)',  bg:'var(--on-bg)', border:'var(--on-border)'},
+  {id:'compliance',label:'5 · Compliance',icon:'📋',desc:'Checklist final e validacao pelo ADM',      color:'var(--comp)',bg:'var(--comp-bg)',border:'var(--comp-border)'},
+  {id:'done',      label:'Concluido',     icon:'✅',desc:'Processo encerrado com sucesso',            color:'var(--done)',bg:'var(--done-bg)',border:'var(--done-border)'},
+];
+const COL_ORDER=COLS.map(c=>c.id);
+const PROGRESS={rh:0,adm:17,ti:33,onboarding:60,compliance:85,done:100};
+
+let tasks=[
+  {id:'ONB-1042',nome:'Marina Oliveira',funcao:'Analista de Marketing',setor:'Marketing',modelo:'Hibrido',data:'2025-06-10',email:'marina@gmail.com',cpf:'123.456.789-00',contato:'(11) 91234-5678',endereco:'Rua das Flores, 100 - 01310-100',unidade:'Matriz SP',obs:'',stage:'adm',created:'03/06/2025',adm:{equipamentos:'NB-2241, Monitor 27, Teclado, Mouse',telefone:'(11) 3000-1042'},ti:{},on:{},comp:{},timeline:[{stage:'rh',label:'Task criada',time:'03/06 09:00'},{stage:'adm',label:'RH concluido',time:'03/06 14:22'}]},
+  {id:'ONB-1039',nome:'Pedro Alves',funcao:'Dev Frontend',setor:'Tecnologia',modelo:'',data:'',email:'',cpf:'987.654.321-00',contato:'',endereco:'',unidade:'',obs:'',stage:'rh',created:'02/06/2025',adm:{},ti:{},on:{},comp:{},timeline:[{stage:'rh',label:'Task criada',time:'02/06 10:15'}]},
+  {id:'ONB-1035',nome:'Camila Rocha',funcao:'Coordenadora de RH',setor:'RH',modelo:'Presencial',data:'2025-06-05',email:'camila@rh.com',cpf:'111.222.333-44',contato:'(21) 98765-4321',endereco:'Av. Central, 500 - 20040-020',unidade:'Filial RJ',obs:'',stage:'compliance',created:'01/06/2025',adm:{equipamentos:'NB-1890, Monitor 24',telefone:'(21) 3000-1035'},ti:{emailCorp:'camila.rocha@empresa.com',acessos:'ERP, Slack, GitHub',equipamentos:'NB-1890'},on:{confirmacao:'sim'},comp:{},timeline:[{stage:'rh',label:'Task criada',time:'01/06 08:00'},{stage:'adm',label:'Encaminhado ao ADM',time:'01/06 15:00'},{stage:'ti',label:'Encaminhado ao TI',time:'02/06 09:30'},{stage:'onboarding',label:'TI concluido',time:'02/06 14:00'},{stage:'compliance',label:'Onboarding confirmado',time:'03/06 08:00'}]},
+  {id:'ONB-1031',nome:'Lucas Ferreira',funcao:'Analista Financeiro',setor:'Financeiro',modelo:'Presencial',data:'2025-05-28',email:'lucas@fin.com',cpf:'555.666.777-88',contato:'(11) 97654-3210',endereco:'Rua Augusta, 200 - 01305-100',unidade:'Matriz SP',obs:'',stage:'done',created:'27/05/2025',adm:{equipamentos:'NB-1760',telefone:'(11) 3000-1031'},ti:{emailCorp:'lucas.ferreira@empresa.com',acessos:'ERP, Slack',equipamentos:'NB-1760'},on:{confirmacao:'sim'},comp:{dados:'sim',registros:'sim',entrega:'sim',termo:'sim',facial:'sim',numCorp:'sim'},timeline:[{stage:'rh',label:'Task criada',time:'27/05 08:00'},{stage:'adm',label:'Encaminhado ao ADM',time:'27/05 15:00'},{stage:'ti',label:'Encaminhado ao TI',time:'28/05 09:00'},{stage:'onboarding',label:'TI concluido',time:'28/05 14:00'},{stage:'compliance',label:'Onboarding confirmado',time:'29/05 08:00'},{stage:'done',label:'Processo encerrado pelo ADM',time:'29/05 16:00'}]},
+  {id:'ONB-1044',nome:'Beatriz Santos',funcao:'UX Designer',setor:'Tecnologia',modelo:'Hibrido',data:'2025-06-15',email:'bea@ux.com',cpf:'222.333.444-55',contato:'(11) 96543-2109',endereco:'Rua Pamplona, 145 - 01405-100',unidade:'Matriz SP',obs:'',stage:'ti',created:'04/06/2025',adm:{equipamentos:'MacBook Pro, Monitor 27',telefone:'(11) 3000-1044'},ti:{emailCorp:'',acessos:'',equipamentos:''},on:{},comp:{},timeline:[{stage:'rh',label:'Task criada',time:'04/06 09:00'},{stage:'adm',label:'Encaminhado ao ADM',time:'04/06 11:00'},{stage:'ti',label:'Encaminhado ao TI',time:'04/06 17:00'}]},
+  {id:'ONB-1047',nome:'Rafael Costa',funcao:'Gerente Comercial',setor:'Comercial',modelo:'Presencial',data:'2025-06-18',email:'',cpf:'333.444.555-66',contato:'',endereco:'',unidade:'',obs:'Cargo de lideranca - prioridade',stage:'rh',created:'05/06/2025',adm:{},ti:{},on:{},comp:{},timeline:[{stage:'rh',label:'Task criada',time:'05/06 08:30'}]},
+];
+
+let dragId=null,toastTimer=null;
+
+function render(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  document.getElementById('stat-total').textContent=tasks.length;
+  document.getElementById('stat-done').textContent=tasks.filter(t=>t.stage==='done').length;
+  document.getElementById('stat-block').textContent=tasks.filter(t=>t.stage!=='done'&&!canAdvance(t)).length;
+
+  COLS.forEach(col=>{
+    const colTasks=tasks.filter(t=>t.stage===col.id);
+    const rule=STAGE_RULES[col.id];
+    const reqList=rule?rule.fields.map(f=>f.label).join(', '):'';
+    const div=document.createElement('div');
+    div.className='col';
+    div.innerHTML=`
+      <div class="col-head">
+        <div class="col-top">
+          <div class="col-label">
+            <div class="col-icon" style="background:${col.bg};border:1.5px solid ${col.border}">${col.icon}</div>
+            <div class="col-name" style="color:${col.color}">${col.label}</div>
+          </div>
+          <div class="col-count" style="background:${col.bg};border:1.5px solid ${col.border};color:${col.color}">${colTasks.length}</div>
+        </div>
+        <div class="col-desc">${col.desc}</div>
+        ${reqList?`<div class="col-required" style="margin-top:5px"><strong>Obrigatorio para avancar:</strong> ${reqList}</div>`:''}
+      </div>
+      <div class="col-body" id="col-${col.id}" data-col="${col.id}">
+        ${colTasks.length===0?`<div class="col-empty"><div class="col-empty-icon">${col.icon}</div>Nenhuma task</div>`:colTasks.map(t=>cardHTML(t,col)).join('')}
+      </div>`;
+    board.appendChild(div);
+  });
+
+  document.querySelectorAll('.card').forEach(c=>{c.addEventListener('dragstart',onDragStart);c.addEventListener('dragend',onDragEnd);});
+  document.querySelectorAll('.col-body').forEach(b=>{b.addEventListener('dragover',onDragOver);b.addEventListener('dragleave',onDragLeave);b.addEventListener('drop',onDrop);});
+}
+
+function cardHTML(t,col){
+  const pct=PROGRESS[t.stage]||0;
+  const isDone=t.stage==='done';
+  const si=COL_ORDER.indexOf(t.stage);
+  const nextCol=si<COL_ORDER.length-1?COLS[si+1]:null;
+  const missing=getMissing(t);
+  const ok=missing.length===0;
+  const mc={'Presencial':'#1e6fd9','Hibrido':'#c47a00','Remoto':'#0a9b7d'}[t.modelo]||'var(--text3)';
+
+  let pendingBlock='';
+  if(!isDone&&missing.length){
+    const names=missing.slice(0,3).map(f=>'- '+f.label).join('\n');
+    const extra=missing.length>3?'\n+ '+(missing.length-3)+' outros':'';
+    pendingBlock=`<div class="card-pending"><div class="card-pending-title">Pendencias para avancar (${missing.length})</div><div style="white-space:pre-line;font-size:10.5px">${names}${extra}</div></div>`;
+  }
+
+  const actionBtns=!isDone&&nextCol?`
+    <div class="card-actions">
+      ${!ok
+        ?`<button class="btn-fill" onclick="openFill('${t.id}')">Preencher campos</button>`
+        :`<button class="btn-advance" style="background:${nextCol.bg};border-color:${nextCol.border};color:${nextCol.color}" onclick="advance('${t.id}')">Mover para ${nextCol.label.replace(/^\d+ · /,'')}</button>`
+      }
+      <button class="btn-view" onclick="openDetail('${t.id}')">Ver</button>
+    </div>`:'';
+
+  const readyBadge=!isDone&&ok&&nextCol
+    ?`<div class="ready-badge">&#10003; Pronto — avancara automaticamente</div>`:'';
+
+  return `<div class="card ${isDone?'done':''} ${!isDone&&!ok?'blocked':''} ${!isDone&&ok&&nextCol?'ready':''}" draggable="true" data-id="${t.id}" id="card-${t.id}">
+    <div class="card-accent" style="background:${col.color}"></div>
+    <div class="card-header">
+      <div class="card-id">${t.id} ${!isDone&&!ok?' (bloqueada)':''}</div>
+      <button class="card-menu" onclick="openDetail('${t.id}')" title="Detalhes">...</button>
+    </div>
+    <div class="card-name">${t.nome}</div>
+    <div class="card-role">${t.funcao}</div>
+    <div class="card-tags">
+      <span class="tag" style="background:${col.bg};border-color:${col.border};color:${col.color}">${col.icon} ${t.setor}</span>
+      ${t.modelo?`<span class="tag" style="background:#f5f3f0;border-color:var(--border);color:${mc}">${t.modelo}</span>`:''}
+    </div>
+    ${readyBadge}
+    ${pendingBlock}
+    <div class="card-meta">
+      <div class="card-date">Inicio: ${t.data?formatDate(t.data):t.created}</div>
+      <div class="card-progress">
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${col.color}"></div></div>
+        <div class="prog-pct">${pct}%</div>
+      </div>
+    </div>
+    ${actionBtns}
+    ${isDone?`<div style="margin-top:10px;padding-left:10px;font-size:11px;font-weight:700;color:var(--done)">Concluido em ${t.created}</div>`:''}
+  </div>`;
+}
+
+function advance(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  const missing=getMissing(t);
+  if(missing.length){toast('Preencha antes de avancar: '+missing.map(f=>f.label).join(', '),'error');shakeCard(id);return;}
+  const si=COL_ORDER.indexOf(t.stage);
+  const next=COL_ORDER[si+1];
+  t.stage=next;
+  t.timeline.push({stage:next,label:'Avancado para '+COLS[si+1].label.replace(/^\d+ · /,''),time:nowStr()});
+  if(next==='onboarding')toast('Notificacao enviada a todos os envolvidos','info');
+  else toast('Movido para '+COLS[si+1].label,'success');
+  render();
+}
+
+function shakeCard(id){const el=document.getElementById('card-'+id);if(!el)return;el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),400);}
+
+function openFill(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  const rule=STAGE_RULES[t.stage];if(!rule)return;
+  const missing=getMissing(t);
+  const col=COLS.find(c=>c.id===t.stage);
+
+  const fieldsHtml=rule.fields.map(f=>{
+    const val=getPath(t,f.path)||'';
+    const isMissing=missing.find(m=>m.key===f.key);
+    const errCls=isMissing?'error':'';
+
+    if(f.path==='modelo')return`<div class="field"><label>${f.label} <span class="req-star">*</span></label><select id="fill-${f.key}" class="${errCls}"><option value="">Selecione</option>${['Presencial','Hibrido','Remoto'].map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+    if(f.path==='unidade')return`<div class="field"><label>${f.label} <span class="req-star">*</span></label><select id="fill-${f.key}" class="${errCls}"><option value="">Selecione</option>${['Matriz SP','Filial RJ','Filial BH','Home Office'].map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+    if(f.path==='setor')return`<div class="field"><label>${f.label} <span class="req-star">*</span></label><select id="fill-${f.key}" class="${errCls}"><option value="">Selecione</option>${['Tecnologia','Financeiro','Comercial','RH','Operacoes','Marketing','Juridico'].map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+    if(f.path==='data')return`<div class="field"><label>${f.label} <span class="req-star">*</span></label><input id="fill-${f.key}" type="date" value="${val}" class="${errCls}"></div>`;
+    if(f.path.endsWith('acessos')||f.path.endsWith('equipamentos')||f.path.endsWith('obs'))return`<div class="field"><label>${f.label} <span class="req-star">*</span></label><textarea id="fill-${f.key}" class="${errCls}" placeholder="${f.label}">${val}</textarea></div>`;
+    if(f.path.startsWith('on.')||f.path.startsWith('comp.'))return`<div class="field"><label>${f.label} <span class="req-star">*</span></label><select id="fill-${f.key}" class="${errCls}"><option value="">Selecione</option><option value="sim" ${val==='sim'?'selected':''}>Sim - confirmado</option><option value="nao" ${val==='nao'?'selected':''}>Nao se aplica</option></select></div>`;
+    return`<div class="field"><label>${f.label} <span class="req-star">*</span></label><input id="fill-${f.key}" type="text" value="${val}" placeholder="${f.label}" class="${errCls}"></div>`;
+  }).join('');
+
+  document.getElementById('modal-fill-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="width:32px;height:32px;border-radius:9px;background:${col.bg};border:1.5px solid ${col.border};display:flex;align-items:center;justify-content:center;font-size:16px">${col.icon}</div>
+      <div><div class="modal-title" style="margin-bottom:0">${rule.label}</div><div style="font-size:12px;color:var(--text3);font-weight:500">${t.nome} - ${t.id}</div></div>
+    </div>
+    ${missing.length?`<div style="margin:12px 0;padding:10px 14px;background:var(--warn-bg);border:1.5px solid var(--warn-border);border-radius:10px;font-size:12px;font-weight:700;color:var(--warn)">${missing.length} campo(s) obrigatorio(s) pendente(s)</div>`:''}
+    ${fieldsHtml}
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-fill')">Cancelar</button>
+      <button class="btn-save" style="background:${rule.saveBtnColor}" onclick="saveFill('${id}')">Salvar e verificar</button>
+    </div>`;
+  document.getElementById('modal-fill').classList.add('open');
+}
+
+function saveFill(id){
+  const t=tasks.find(x=>x.id===id);
+  const rule=STAGE_RULES[t.stage];
+  const stageSnapshot=t.stage;
+  rule.fields.forEach(f=>{const el=document.getElementById('fill-'+f.key);if(el)setPath(t,f.path,el.value.trim());});
+  const remaining=getMissing(t);
+  closeModal('modal-fill');
+  if(remaining.length===0){
+    // Todos os campos preenchidos: animar o card e avancar automaticamente
+    render(); // renderiza primeiro para criar o elemento com classe ready
+    const card=document.getElementById('card-'+id);
+    if(card){
+      card.classList.add('auto-moving');
+      toast('Tudo preenchido! Movendo automaticamente...','success');
+      setTimeout(()=>{
+        const si=COL_ORDER.indexOf(t.stage);
+        if(si<COL_ORDER.length-1){
+          const next=COL_ORDER[si+1];
+          t.stage=next;
+          t.timeline.push({stage:next,label:'Avancado automaticamente para '+COLS[si+1].label.replace(/^\d+ · /,''),time:nowStr()});
+          if(next==='onboarding')toast('Notificacao enviada a todos os envolvidos','info');
+          else toast('Movido automaticamente para '+COLS[si+1].label,'success');
+        }
+        render();
+      },750);
+    }
+  } else {
+    toast('Salvo. Ainda faltam '+remaining.length+' campo(s).','warn');
+    render();
+  }
+}
+
+function onDragStart(e){
+  dragId=e.currentTarget.dataset.id;
+  e.currentTarget.classList.add('dragging');
+  const t=tasks.find(x=>x.id===dragId);
+  const ghost=document.getElementById('ghost');
+  ghost.textContent=t?t.nome:'';
+  ghost.className='drag-ghost';
+  ghost.style.display='block';
+  e.dataTransfer.effectAllowed='move';
+}
+function onDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  document.getElementById('ghost').style.display='none';
+  document.querySelectorAll('.col-body').forEach(b=>b.classList.remove('drag-over-ok','drag-over-block'));
+  dragId=null;
+}
+document.addEventListener('dragover',e=>{
+  const g=document.getElementById('ghost');
+  if(g.style.display!=='none'){g.style.left=(e.clientX+12)+'px';g.style.top=(e.clientY+8)+'px';}
+});
+function onDragOver(e){
+  e.preventDefault();if(!dragId)return;
+  const t=tasks.find(x=>x.id===dragId);
+  const newStage=e.currentTarget.dataset.col;
+  const oldSi=COL_ORDER.indexOf(t.stage);
+  const newSi=COL_ORDER.indexOf(newStage);
+  const isForward=newSi>oldSi;
+  const blocked=isForward&&!canAdvance(t);
+  e.currentTarget.classList.toggle('drag-over-ok',!blocked&&newStage!==t.stage);
+  e.currentTarget.classList.toggle('drag-over-block',blocked&&newStage!==t.stage);
+  document.getElementById('ghost').className='drag-ghost'+(blocked?' blocked-ghost':'');
+}
+function onDragLeave(e){e.currentTarget.classList.remove('drag-over-ok','drag-over-block');}
+function onDrop(e){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over-ok','drag-over-block');
+  if(!dragId)return;
+  const newStage=e.currentTarget.dataset.col;
+  const t=tasks.find(x=>x.id===dragId);
+  if(!t||t.stage===newStage)return;
+  const oldSi=COL_ORDER.indexOf(t.stage);
+  const newSi=COL_ORDER.indexOf(newStage);
+  const isForward=newSi>oldSi;
+  if(isForward&&!canAdvance(t)){
+    const missing=getMissing(t);
+    toast('Preencha antes de avancar: '+missing.slice(0,2).map(f=>f.label).join(', ')+(missing.length>2?'...':''),'error');
+    shakeCard(t.id);return;
+  }
+  t.stage=newStage;
+  const dir=newSi>oldSi?'Avancado para':'Retornado para';
+  t.timeline.push({stage:newStage,label:dir+' '+COLS[newSi].label.replace(/^\d+ · /,''),time:nowStr()});
+  toast((newSi>=oldSi?'Movido para ':'Retornado para ')+COLS[newSi].label,newSi>=oldSi?'success':'info');
+  render();
+}
+
+function openDetail(id){
+  const t=tasks.find(x=>x.id===id);
+  const col=COLS.find(c=>c.id===t.stage);
+  const si=COL_ORDER.indexOf(t.stage);
+  const missing=getMissing(t);
+  const extras=[];
+  if(t.adm?.equipamentos)extras.push({l:'Equipamentos (ADM)',v:t.adm.equipamentos});
+  if(t.adm?.telefone)extras.push({l:'Tel. corporativo',v:t.adm.telefone});
+  if(t.ti?.emailCorp)extras.push({l:'E-mail corporativo',v:t.ti.emailCorp});
+  if(t.ti?.acessos)extras.push({l:'Acessos (TI)',v:t.ti.acessos});
+  document.getElementById('modal-detail-body').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:4px">${t.id} - ${t.created}</div>
+        <div style="font-size:21px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px">${t.nome}</div>
+        <div style="font-size:13px;color:var(--text2);font-weight:500">${t.funcao} - ${t.setor}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        <span style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;background:${col.bg};border:1.5px solid ${col.border};color:${col.color}">${col.icon} ${col.label.replace(/^\d+ · /,'')}</span>
+        <div style="font-size:11px;color:var(--text3);font-weight:600">${PROGRESS[t.stage]}% concluido</div>
+        <div style="width:80px;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden"><div style="width:${PROGRESS[t.stage]}%;height:100%;background:${col.color};border-radius:3px"></div></div>
+      </div>
+    </div>
+    ${missing.length?`<div style="margin-bottom:14px;padding:10px 14px;background:var(--warn-bg);border:1.5px solid var(--warn-border);border-radius:10px">
+      <div style="font-size:11.5px;font-weight:800;color:var(--warn);margin-bottom:4px">Bloqueada - campos obrigatorios pendentes</div>
+      <div style="font-size:11px;color:var(--warn);line-height:1.7">${missing.map(f=>'- '+f.label).join('<br>')}</div>
+    </div>`:''}
+    <div class="section-title">Dados pessoais</div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">E-mail</div><div class="detail-value ${!t.email?'empty':''}">${t.email||'nao informado'}</div></div>
+      <div class="detail-item"><div class="detail-label">CPF</div><div class="detail-value ${!t.cpf?'empty':''}">${t.cpf||'nao informado'}</div></div>
+      <div class="detail-item"><div class="detail-label">Modelo</div><div class="detail-value ${!t.modelo?'empty':''}">${t.modelo||'nao informado'}</div></div>
+      <div class="detail-item"><div class="detail-label">Unidade</div><div class="detail-value ${!t.unidade?'empty':''}">${t.unidade||'nao informado'}</div></div>
+      <div class="detail-item"><div class="detail-label">Contato</div><div class="detail-value ${!t.contato?'empty':''}">${t.contato||'nao informado'}</div></div>
+      <div class="detail-item"><div class="detail-label">Data de inicio</div><div class="detail-value ${!t.data?'empty':''}">${t.data?formatDate(t.data):'nao informado'}</div></div>
+    </div>
+    ${t.endereco?`<div class="detail-item" style="margin-top:8px"><div class="detail-label">Endereco</div><div class="detail-value">${t.endereco}</div></div>`:''}
+    ${extras.length?`<div class="section-title">Dados das etapas</div><div class="detail-grid">${extras.map(f=>`<div class="detail-item"><div class="detail-label">${f.l}</div><div class="detail-value">${f.v}</div></div>`).join('')}</div>`:''}
+    <div class="section-title">Historico</div>
+    <div class="timeline">${t.timeline.map((item,i)=>{const c=COLS.find(x=>x.id===item.stage);return`<div class="tl-item"><div class="tl-left"><div class="tl-dot" style="background:${c?.color||'var(--text3)'}"></div>${i<t.timeline.length-1?'<div class="tl-line"></div>':''}</div><div class="tl-content"><div class="tl-stage" style="color:${c?.color||'var(--text3)'}">${c?.label.replace(/^\d+ · /,'')||item.stage}</div><div class="tl-desc">${item.label} - ${item.time}</div></div></div>`;}).join('')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+      <button class="btn-cancel" onclick="closeModal('modal-detail')">Fechar</button>
+      <div style="display:flex;gap:8px">
+        ${missing.length&&t.stage!=='done'?`<button class="btn-fill" onclick="closeModal('modal-detail');openFill('${t.id}')">Preencher campos</button>`:''}
+        ${!missing.length&&si<COL_ORDER.length-1?`<button class="btn-save" style="background:${STAGE_RULES[COLS[si+1].id]?.saveBtnColor||'#444'}" onclick="advance('${t.id}');closeModal('modal-detail')">Avancar para ${COLS[si+1]?.label.replace(/^\d+ · /,'')}</button>`:''}
+      </div>
+    </div>`;
+  document.getElementById('modal-detail').classList.add('open');
+}
+
+function openNew(){document.getElementById('n-data').value=new Date().toISOString().split('T')[0];document.getElementById('modal-new').classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function createTask(){
+  const get=id=>document.getElementById(id).value.trim();
+  const nome=get('n-nome'),funcao=get('n-funcao'),setor=get('n-setor');
+  if(!nome||!funcao||!setor){toast('Preencha nome, funcao e setor','error');return;}
+  const id='ONB-'+String(1050+tasks.length);
+  tasks.unshift({id,nome,funcao,setor,modelo:get('n-modelo'),data:get('n-data'),email:get('n-email'),cpf:get('n-cpf'),contato:get('n-contato'),endereco:get('n-endereco'),unidade:get('n-unidade'),obs:get('n-obs'),stage:'rh',created:new Date().toLocaleDateString('pt-BR'),adm:{},ti:{},on:{},comp:{},timeline:[{stage:'rh',label:'Task criada - Pendente RH',time:nowStr()}]});
+  ['n-nome','n-funcao','n-email','n-cpf','n-contato','n-endereco','n-obs'].forEach(f=>document.getElementById(f).value='');
+  ['n-setor','n-modelo','n-unidade'].forEach(f=>document.getElementById(f).value='');
+  closeModal('modal-new');toast('Task criada com sucesso!','success');render();
+}
+
+function formatDate(d){if(!d)return'';const [y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
+function nowStr(){const n=new Date();return n.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+function toast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+(type||'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.className='',3500);}
+
+['modal-new','modal-fill','modal-detail'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);});
+});
+render();
+</script>
+</body>
+</html>
